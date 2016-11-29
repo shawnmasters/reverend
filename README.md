@@ -1,9 +1,19 @@
+# Reverend
+## Now working with Python 3
+
+I like having a simple Bayesian classifier, but I'm done with Python 2.X.  I spent a little bit of time to make this long lived pure python library run in version 3.X.  The code that deals with the email is broken as RFC822 is gone.  I may come back to that later.
+
+Now for the original readme.
+
+---
+
 Reverend is a simple Bayesian classifier.
 It is designed to be easy to adapt and extend for
 your application.
 
 A simple example would look like:
 
+```python
 from reverend.thomas import Bayes
 
 guesser = Bayes()
@@ -11,9 +21,12 @@ guesser.train('fish', 'salmon trout cod carp')
 guesser.train('fowl', 'hen chicken duck goose')
 
 guesser.guess('chicken tikka marsala')
+```
 
 You can also "forget" some training:
+```python
 guesser.untrain('fish','salmon carp')
+```
 
 The first argument of train is the bucket or class that
 you want associated with the training. If the bucket does
