@@ -6,7 +6,7 @@
 # License as published by the Free Software Foundation.
 #
 
-from email.Message import Message
+from email.message import Message
 import email
 import rfc822
 
@@ -35,14 +35,14 @@ class EmailItem(Message):
         try:
             msg = email.message_from_file(fp, self)
         except email.Errors.MessageParseError:
-            print 'bad message'
+            print('bad message')
             return None
         return msg
     fromFile = classmethod(fromFile)
 
 def runTrainer():
     from reverend.ui.trainer import Trainer
-    from Tkinter import Tk
+    from tkinter import Tk
     from reverend.guessers.email import EmailClassifier
     root = Tk()
     root.title('Reverend Trainer')
@@ -56,7 +56,7 @@ def runTester():
     from reverend.ui.tester import DirectoryExam
     de = DirectoryExam('spam', 'Spam', EmailItem)
     for m, ans in de:
-        print m['from'], ans
+        print(m['from'], ans)
 
     
 if __name__ == "__main__":
