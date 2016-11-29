@@ -17,15 +17,15 @@ class BayesData(dict):
         self.pool = pool
         self.tokenCount = 0
         self.trainCount = 0
-        
+
     def trainedOn(self, item):
         return item in self.training
 
     def __repr__(self):
         return '<BayesDict: %s, %s tokens>' % (self.name, self.tokenCount)
-        
+
 class Bayes(object):
-    
+
     def __init__(self, tokenizer=None, combiner=None, dataClass=None):
         if dataClass is None:
             self.dataClass = BayesData
@@ -127,7 +127,7 @@ class Bayes(object):
             # skip our special pool
             if pname == '__Corpus__':
                 continue
-            
+
             poolCount = pool.tokenCount
             themCount = max(self.corpus.tokenCount - poolCount, 1)
             cacheDict = self.cache.setdefault(pname, self.dataClass(pname))
@@ -146,12 +146,12 @@ class Bayes(object):
                     goodMetric = min(1.0, otherCount/poolCount)
                 badMetric = min(1.0, thisCount/themCount)
                 f = badMetric / (goodMetric + badMetric)
-                
+
                 # PROBABILITY_THRESHOLD
                 if abs(f-0.5) >= 0.1 :
                     # GOOD_PROB, BAD_PROB
                     cacheDict[word] = max(0.0001, min(0.9999, f))
-                    
+
     def poolProbs(self):
         if self.dirty:
             self.buildCache()
@@ -165,7 +165,7 @@ class Bayes(object):
         Note that this does not change the case.
         In some applications you may want to lowecase everthing
         so that "king" and "King" generate the same token.
-        
+
         Override this in your subclass for objects other
         than text.
 
@@ -228,7 +228,7 @@ class Bayes(object):
                 else:
                     pool[token] =  count - 1
                 pool.tokenCount -= 1
-                
+
             count = self.corpus.get(token, 0)
             if count:
                 if count == 1:
@@ -237,7 +237,7 @@ class Bayes(object):
                     self.corpus[token] =  count - 1
                 self.corpus.tokenCount -= 1
 
-    def trainedOn(self, msg):            
+    def trainedOn(self, msg):
         for p in list(self.cache.values()):
             if msg in p.training:
                 return True
@@ -254,7 +254,7 @@ class Bayes(object):
                 res[pname]=self.combiner(p, pname)
         res = list(res.items())
         res.sort(key=lambda x: x[1])
-        return res        
+        return res
 
     def robinson(self, probs, ignore):
         """ computes the probability of a message being spam (Robinson's method)
@@ -263,7 +263,7 @@ class Bayes(object):
             S = (1 + (P-Q)/(P+Q)) / 2
             Courtesy of http://christophe.delord.free.fr/en/index.html
         """
-        
+
         nth = 1./len(probs)
         P = 1.0 - reduce(operator.mul, [1.0-p[1] for p in probs], 1.0) ** nth
         Q = 1.0 - reduce(operator.mul, [p[1] for p in probs]) ** nth
@@ -296,19 +296,50 @@ class Tokenizer:
     It expects a string and can return all tokens lower-cased
     or in their existing case.
     """
-    
+
     WORD_RE = re.compile('\\w+', re.U)
 
     def __init__(self, lower=False):
         self.lower = lower
-        
+
     def tokenize(self, obj):
         for match in self.WORD_RE.finditer(obj):
             if self.lower:
                 yield match.group().lower()
             else:
                 yield match.group()
-    
+
+class OSBTokenizer:
+    """A slightly more complex tokenizer based on the work of Fidelis Assis
+    and William Yerazunis in CRM114.  The idea is to build a set of chains
+    over a window."""
+
+    WORD_RE = re.compile('\\w+', re.U)
+
+    def __init__(self, window_size=5, lower=False):
+        self.lower = lower
+        self.window_size = window_size
+
+        return
+
+    def tokenize(self, obj):
+        window = []
+        for match in self.WORD_RE.finditer(obj):
+            if self.lower:
+                window.append(match.group().lower())
+            else:
+                window.append(match.group())
+
+            if len(window) > self.window_size:
+                window = window[1:]
+            ind = len(window) - 2
+            while(ind >= 0):
+                residue = window[ind] + " " + window[len(window) - 1]
+                yield residue
+                ind = ind - 1
+
+        return
+
 def chi2P(chi, df):
     """ return P(chisq >= chi, with df degree of freedom)
 
@@ -321,4 +352,3 @@ def chi2P(chi, df):
         term *= m/i
         sum += term
     return min(sum, 1.0)
-
